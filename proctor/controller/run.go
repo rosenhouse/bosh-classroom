@@ -8,7 +8,7 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-classroom/proctor/shell"
 )
 
-func (c *Controller) RunOnVMs(name, command string) error {
+func (c *Controller) RunOnVMs(name, command string, commandIsFilePath bool) error {
 	prefixedName := prefix(name)
 
 	stackStatus, stackID, _, err := c.AWSClient.DescribeStack(prefixedName)
@@ -43,7 +43,7 @@ func (c *Controller) RunOnVMs(name, command string) error {
 		Username:      c.SSHUser,
 		PrivateKeyPEM: pemBytes,
 	}
-	results := c.ParallelRunner.ConnectAndRun(targets, command, options)
+	results := c.ParallelRunner.ConnectAndRun(targets, command, options, commandIsFilePath)
 
 	for host, r := range results {
 		c.Log.Println(0, "%s", c.Log.Green("%s", host))

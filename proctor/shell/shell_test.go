@@ -9,8 +9,8 @@ import (
 	"github.com/pivotal-cf-experimental/bosh-classroom/proctor/shell"
 )
 
-var _ = XDescribe("Shell", func() {
-	It("should run a command on a remote machine and return the output", func() {
+var _ = Describe("Shell", func() {
+	FIt("should run a command on a remote machine and return the output", func() {
 		pemBytes, err := ioutil.ReadFile("/tmp/key")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -21,8 +21,32 @@ var _ = XDescribe("Shell", func() {
 			PrivateKeyPEM: pemBytes,
 		}
 
-		output, err := runner.ConnectAndRun("54.198.125.227", "bosh status", options)
+		output, err := runner.ConnectAndRun("52.11.64.245",
+			`#!/bin/bash
+
+			bosh status`, options)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(ContainSubstring("Bosh Lite Director"))
+	})
+
+	It("should support commands that are shell scripts", func() {
+		pemBytes, err := ioutil.ReadFile("/tmp/key")
+		Expect(err).NotTo(HaveOccurred())
+
+		runner := shell.Runner{}
+		options := &shell.ConnectionOptions{
+			Username:      "ubuntu",
+			Port:          22,
+			PrivateKeyPEM: pemBytes,
+		}
+
+		scriptContents := `#!/usr/bin/env python
+
+print "hello world"
+`
+		output, err := runner.ConnectAndRun("52.11.64.245", scriptContents, options)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("hello world"))
+
 	})
 })

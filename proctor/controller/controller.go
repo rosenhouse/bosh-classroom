@@ -26,7 +26,7 @@ type cliLogger interface {
 }
 
 type parallelRunner interface {
-	ConnectAndRun(hosts []string, command string, options *shell.ConnectionOptions) map[string]shell.Result
+	ConnectAndRun(hosts []string, command string, options *shell.ConnectionOptions, commandIsFilePath bool) map[string]shell.Result
 }
 
 type webClient interface {

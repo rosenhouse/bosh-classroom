@@ -36,17 +36,28 @@ func (r *Runner) ConnectAndRun(host, command string, options *ConnectionOptions)
 	}
 	defer client.Close()
 
-	session, err := client.NewSession()
+	scpSession, err := client.NewSession()
 	if err != nil {
-		return "", fmt.Errorf("failed to create session: ", err)
+		return "", fmt.Errorf("Failed to create SCP session: " + err.Error())
 	}
-	defer session.Close()
+	defer scpSession.Close()
+
+	scriptReader := strings.NewReader("command")
+	scpError := copy(int64(len(command)), os.FileMode(0777), "test-script", scriptReader, "/tmp/", scpSession)
+	if scpError != nil {
+		return "", fmt.Errorf("Failed to scp: %s", scpError)
+	}
+
+	execSession, err := client.NewSession()
+	if err != nil {
+		return "", fmt.Errorf("Failed to create session: " + err.Error())
+	}
+	defer execSession.Close()
 
 	var stdoutBytes bytes.Buffer
-	session.Stdout = &stdoutBytes
-	session.Stderr = os.Stderr
-	if err := session.Run(command); err != nil {
-		return "", fmt.Errorf("failed while running command: %s", err)
+	execSession.Stdout = &stdoutBytes
+	if err := execSession.Run("/tmp/scripts/test-script"); err != nil {
+		return "", fmt.Errorf("Failed running script: " + err.Error())
 	}
 	return stdoutBytes.String(), nil
 }
@@ -65,34 +76,4 @@ func copy(size int64, mode os.FileMode, fileName string, contents io.Reader, des
 		return err
 	}
 	return nil
-}
-
-func scpAndRun(client ssh.Client) {
-	scpSession, err := client.NewSession()
-	if err != nil {
-		panic("Failed to create SCP session: " + err.Error())
-	}
-	defer scpSession.Close()
-
-	scriptContents := `#!/bin/bash
-
-echo "this script is located at $dirname $0"
-`
-	scriptReader := strings.NewReader(scriptContents)
-	scpError := copy(int64(len(scriptContents)), os.FileMode(0777), "test-script", scriptReader, "/tmp/scripts/", scpSession)
-	if scpError != nil {
-		panic(scpError)
-	}
-
-	execSession, err := client.NewSession()
-	if err != nil {
-		panic("Failed to create session: " + err.Error())
-	}
-	defer execSession.Close()
-
-	var stdoutBytes bytes.Buffer
-	execSession.Stdout = &stdoutBytes
-	if err := execSession.Run("/tmp/scripts/test-script"); err != nil {
-		panic("Failed to run: " + err.Error())
-	}
 }

@@ -64,7 +64,7 @@ var _ = Describe("RunOnVMs", func() {
 	})
 
 	It("should run the command on all running VMs", func() {
-		err := c.RunOnVMs(classroomName, "some command to run")
+		err := c.RunOnVMs(classroomName, "some command to run", false)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(parallelRunner.ConnectAndRunCall.Receives.Hosts).To(ConsistOf([]string{"host-a", "host-d"}))
@@ -77,7 +77,7 @@ var _ = Describe("RunOnVMs", func() {
 	})
 
 	It("should get the SSH key from S3", func() {
-		err := c.RunOnVMs(classroomName, "some command to run")
+		err := c.RunOnVMs(classroomName, "some command to run", false)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(webClient.GetCall.Receives.URL).To(Equal("some-url"))
@@ -87,7 +87,7 @@ var _ = Describe("RunOnVMs", func() {
 		It("should return an error", func() {
 			webClient.GetCall.Returns.Error = errors.New("some error")
 
-			err := c.RunOnVMs(classroomName, "some command to run")
+			err := c.RunOnVMs(classroomName, "some command to run", false)
 			Expect(err).To(MatchError("getting SSH key: some error"))
 		})
 	})
@@ -96,7 +96,8 @@ var _ = Describe("RunOnVMs", func() {
 		It("should return an error", func() {
 			awsClient.DescribeStackCall.Returns.Status = "some status"
 
-			err := c.RunOnVMs(classroomName, "some command to run")
+			err := c.RunOnVMs(classroomName, "some command to run", false)
+			Expect(err).To(MatchError(ContainSubstring("classroom is not operational")))
 			Expect(err).To(MatchError(ContainSubstring("some status")))
 		})
 	})
@@ -117,7 +118,7 @@ var _ = Describe("RunOnVMs", func() {
 		})
 
 		It("should return an error encapsulating all of the errors", func() {
-			err := c.RunOnVMs(classroomName, "some command to run")
+			err := c.RunOnVMs(classroomName, "some command to run", false)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(BeAssignableToTypeOf(&multierror.Error{}))
 			me := err.(*multierror.Error)
@@ -125,6 +126,16 @@ var _ = Describe("RunOnVMs", func() {
 			Expect(me.Errors).To(ContainElement(MatchError(ContainSubstring("some error a"))))
 			Expect(me.Errors).To(ContainElement(MatchError(ContainSubstring("some error d"))))
 		})
+	})
+
+	It("should pass the commandIsFile flag down into the ConnectAndRun call", func() {
+		err := c.RunOnVMs(classroomName, "some command to run", false)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(parallelRunner.ConnectAndRunCall.Receives.CommandIsFilePath).To(BeFalse())
+
+		err = c.RunOnVMs(classroomName, "some command to run", true)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(parallelRunner.ConnectAndRunCall.Receives.CommandIsFilePath).To(BeTrue())
 	})
 
 })

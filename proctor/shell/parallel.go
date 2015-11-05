@@ -14,7 +14,7 @@ type Result struct {
 	Error  error
 }
 
-func (r *ParallelRunner) ConnectAndRun(hosts []string, command string, options *ConnectionOptions) map[string]Result {
+func (r *ParallelRunner) ConnectAndRun(hosts []string, command string, options *ConnectionOptions, commandIsFilePath bool) map[string]Result {
 	runner := func(host string, c chan Result) {
 		stdout, err := r.Runner.ConnectAndRun(host, command, options)
 		c <- Result{

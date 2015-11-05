@@ -50,7 +50,7 @@ var _ = Describe("Parallelization", func() {
 	})
 
 	It("should run the command once for each host", func() {
-		parallelRunner.ConnectAndRun(hosts, theCommand, options)
+		parallelRunner.ConnectAndRun(hosts, theCommand, options, false)
 		Expect(runner.ConnectAndRunCallCount).To(Equal(len(hosts)))
 
 		targetedHosts := []string{}
@@ -64,7 +64,7 @@ var _ = Describe("Parallelization", func() {
 	})
 
 	It("should return a result for each host", func() {
-		results := parallelRunner.ConnectAndRun(hosts, theCommand, options)
+		results := parallelRunner.ConnectAndRun(hosts, theCommand, options, false)
 		Expect(results).NotTo(BeNil())
 		Expect(results).To(HaveLen(len(hosts)))
 
@@ -78,7 +78,7 @@ var _ = Describe("Parallelization", func() {
 
 	It("should run the commands in parallel", func() {
 		go func() {
-			parallelRunner.ConnectAndRun(hosts, theCommand, options)
+			parallelRunner.ConnectAndRun(hosts, theCommand, options, false)
 		}()
 
 		Eventually(helperFinished, 5).Should(Receive())

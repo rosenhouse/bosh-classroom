@@ -112,6 +112,10 @@ var _ = Describe("Interactions with AWS", func() {
 		Eventually(session, "120s").Should(gexec.Exit(0))
 		Expect(session.Out.Contents()).To(ContainSubstring("/home/ubuntu/.bosh_config"))
 
+		session = run("run", "-name", classroomName, "-f", "fixtures/test-script.sh")
+		Eventually(session, "120s").Should(gexec.Exit(0))
+		Expect(session.Out.Contents()).To(ContainSubstring("something we expect from the script output"))
+
 		session = run("destroy", "-name", classroomName)
 		Eventually(session, "20s").Should(gexec.Exit(0))
 		Expect(session.ExitCode()).To(Equal(0))
